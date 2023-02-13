@@ -8,7 +8,6 @@
  * https://github.com/LukedeMunk/ESP32-8x8ledmatrix-big-display
  */
 #include "MAX7219CWGMatrix.h"
-#include <Arduino.h>
 
 /**************************************************************************/
 /*!
