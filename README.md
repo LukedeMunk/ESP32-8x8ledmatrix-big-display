@@ -21,7 +21,7 @@ Clone the repository, navigate to the `examples` map and try some examples.
 
 ## Internet controls
 
-If you are looking for a way to control the display by a web-interface, you can use the `displayWifiControls` project. Navigate to the `examples\displayWifiControls` folder and upload the `displayWifiControls.ino` program. Connect the hardware. In the folder `documentation` you can find a wiring diagram.
+If you are looking for a way to control the display by a web-interface, you can use the `SmartWifiLedDisplay` project. Navigate to the `examples\SmartWifiLedDisplay` folder and upload the `SmartWifiLedDisplay.ino` program. Connect the hardware. In the folder `documentation` you can find a wiring diagram.
 
 ## Questions or feedback?
 
