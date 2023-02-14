@@ -19,6 +19,28 @@
 */
 /**************************************************************************/
 MAX7219CWGMatrix::MAX7219CWGMatrix(uint8_t numSegmentsHorizontal, uint8_t numSegmentsVertical, uint8_t csPin, uint8_t wiringType) {
+    initialiseMatrix(numSegmentsHorizontal, numSegmentsVertical, csPin, wiringType);
+}
+
+/**************************************************************************/
+/*!
+  @brief    Constructor without initialisation.
+*/
+/**************************************************************************/
+MAX7219CWGMatrix::MAX7219CWGMatrix() {
+    debugln("NOTE: Need to call initialiseMatrix() to initialise the matrix.");
+}
+
+/**************************************************************************/
+/*!
+  @brief    Initialiser.
+  @param    numSegmentsHorizontal   Number of horizontal segments
+  @param    numSegmentsVertical     Number of vertical segments
+  @param    csPin                   Chip-Select pin
+  @param    wiringType              Type of circuit is used. Check circuit diagram.
+*/
+/**************************************************************************/
+void MAX7219CWGMatrix::initialiseMatrix(uint8_t numSegmentsHorizontal, uint8_t numSegmentsVertical, uint8_t csPin, uint8_t wiringType) {
     _numSegmentsHorizontal = numSegmentsHorizontal;
     _numSegmentsVertical = numSegmentsVertical;
     _numSegments = _numSegmentsHorizontal * _numSegmentsVertical;
@@ -33,6 +55,8 @@ MAX7219CWGMatrix::MAX7219CWGMatrix(uint8_t numSegmentsHorizontal, uint8_t numSeg
     _fontRows = 0;
     _fontCols = 0;
 
+    _power = false;
+
     pinMode(_csPin, OUTPUT);
     digitalWrite(_csPin, 1);
 
@@ -41,12 +65,14 @@ MAX7219CWGMatrix::MAX7219CWGMatrix(uint8_t numSegmentsHorizontal, uint8_t numSeg
     clear();
     display();
     setFont(FONT_3X5);
-    setPower(false);
+    setPower(_power);
     setIntensity(0);
 
     _sendCommand(OPCODE_TEST | 0);                                          //Disable test mode
     _sendCommand(OPCODE_DECODE | 0);                                        //Disable decode mode
     _sendCommand(OPCODE_SCAN_LIMIT | 7);                                    //Display all lines
+
+    debugln("NOTE: Matrix ready to use.");
 }
 
 /**************************************************************************/
@@ -56,7 +82,8 @@ MAX7219CWGMatrix::MAX7219CWGMatrix(uint8_t numSegmentsHorizontal, uint8_t numSeg
 */
 /**************************************************************************/
 void MAX7219CWGMatrix::setPower(bool on) {
-	_sendCommand(OPCODE_ENABLE | (on ? 1: 0));
+    _power = on;
+    _sendCommand(OPCODE_ENABLE | (_power ? 1: 0));
 }
 
 /**************************************************************************/
@@ -66,11 +93,12 @@ void MAX7219CWGMatrix::setPower(bool on) {
 */
 /**************************************************************************/
 void MAX7219CWGMatrix::setIntensity(uint8_t level) {
-	/* Check maximum intensity */
-	if (level > 0xF) {
+    /* Check maximum intensity */
+    if (level > 0xF) {
         level = 0xF;
-    }	
-	_sendCommand(OPCODE_INTENSITY | level);
+    }
+    _intensity = level;
+    _sendCommand(OPCODE_INTENSITY | _intensity);
 }
 
 /**************************************************************************/
@@ -84,7 +112,17 @@ void MAX7219CWGMatrix::setRotation(uint8_t rotation) {
         debugln("ERROR: Invalid rotation given. Ignoring it.");
         return;
     }
-	_rotation = rotation;
+    _rotation = rotation;
+}
+
+/**************************************************************************/
+/*!
+  @brief    Sets the if the display is inverted. (0 becomes 1 and vice versa)
+  @param    inverted        True if the display is inverted.
+*/
+/**************************************************************************/
+void MAX7219CWGMatrix::setInverted(bool inverted) {
+    _inverted = inverted;
 }
 
 /**************************************************************************/
@@ -132,13 +170,13 @@ void MAX7219CWGMatrix::drawPixel(uint8_t x, uint8_t y, uint8_t value) {
     }
 
     uint8_t segment = x/COLUMN_SIZE;                                        //Select segment
-	uint16_t b = 7 - (x & 7);		                                        //Extract bit
+	  uint16_t b = 7 - (x & 7);                                               //Extract bit
 
     /* (For now,) if value != 0, turn led on else turn off */
-	if (value) {
-		_matrix[segment][y] |= (1<<b);
+	  if (value) {
+		    _matrix[segment][y] |= (1<<b);
     }	else {
-		_matrix[segment][y] &= ~(1<<b);
+		    _matrix[segment][y] &= ~(1<<b);
     }
 }
 
@@ -186,6 +224,7 @@ void MAX7219CWGMatrix::drawLine(uint8_t x0, uint8_t y0, uint8_t x1, uint8_t y1, 
         }
 
         err -= dy;
+
         if (err < 0) {
             y0 += ystep;
             err += dx;
@@ -198,8 +237,8 @@ void MAX7219CWGMatrix::drawLine(uint8_t x0, uint8_t y0, uint8_t x1, uint8_t y1, 
   @brief    Draws a line with an angle.
   @param    x0              Start point x coordinate
   @param    y0              Start point y coordinate
-  @param    l               Length of the line
-  @param    angle           Angle of the line (degrees)
+  @param    l               Length of the line in pixels
+  @param    angle           Angle of the line in degrees
   @param    value           Value to fill (0-1)
 */
 /**************************************************************************/
@@ -258,7 +297,7 @@ void MAX7219CWGMatrix::drawHLine(uint8_t x, uint8_t y, uint8_t w, uint8_t value)
   @param    value           Value to fill (0-1)
 */
 /**************************************************************************/
-void MAX7219CWGMatrix::drawRect(uint8_t x, uint8_t y, uint8_t w, uint8_t h, uint8_t value) {
+void MAX7219CWGMatrix::drawRectangle(uint8_t x, uint8_t y, uint8_t w, uint8_t h, uint8_t value) {
     drawHLine(x, y, w, value);
     drawHLine(x, y+h-1, w, value);
     drawVLine(x, y, h, value);
@@ -275,7 +314,7 @@ void MAX7219CWGMatrix::drawRect(uint8_t x, uint8_t y, uint8_t w, uint8_t h, uint
   @param    value           Value to fill (0-1)
 */
 /**************************************************************************/
-void MAX7219CWGMatrix::drawFillRect(uint8_t x, uint8_t y, uint8_t w, uint8_t h, uint8_t value) {
+void MAX7219CWGMatrix::drawFillRectangle(uint8_t x, uint8_t y, uint8_t w, uint8_t h, uint8_t value) {
     for (uint8_t i = x; i < x+w; i++) {
         drawVLine(i, y, h, value);
     }
@@ -466,6 +505,64 @@ void MAX7219CWGMatrix::drawFillTriangle(uint8_t x0, uint8_t y0, uint8_t x1, uint
 
 /**************************************************************************/
 /*!
+  @brief    Draws a character.
+  @param    x           x coordinate of most left column of leds
+  @param    y           y coordinate of lowest row of leds
+  @param    character   Character to be drawn
+  @param    value       Value to fill (0-1)
+*/
+/**************************************************************************/
+void MAX7219CWGMatrix::drawChar(uint8_t x, uint8_t y, char character, uint8_t value) {
+    uint8_t i = 0;
+    uint8_t bitCounter = 0b00000001;
+
+    if (_font == FONT_3X5) {
+        while (i < FONT_3X5_SIZE) {
+            if (character == FontToIndex3x5[i]) {
+                break;
+            }
+            i++;
+        }
+    } else if (_font == FONT_4X6) {
+        while (i < FONT_4X6_SIZE) {
+            if (character == FontToIndex4x6[i]) {
+                break;
+            }
+            i++;
+        }
+    } else if (_font == FONT_5X7) {
+        while (i < FONT_5X7_SIZE) {
+            if (character == FontToIndex5x7[i]) {
+                break;
+            }
+            i++;
+        }
+    }
+    
+    uint16_t memAddress = i*_fontCols;
+    uint8_t columnValue = 0;
+        
+    for (uint8_t column = 0; column < _fontCols; column++) {
+        for (uint8_t row = _fontRows; row > 0; row--) {
+            if (_font == FONT_3X5) {
+                columnValue = pgm_read_byte_near(Font3x5 + (memAddress+column));  
+            } else if (_font == FONT_4X6) {
+                columnValue = pgm_read_byte_near(Font4x6 + (memAddress+column));
+            } else if (_font == FONT_5X7) {
+                columnValue = pgm_read_byte_near(Font5x7 + (memAddress+column));
+            }
+
+            if (columnValue & bitCounter) {
+                drawPixel(x+column, y+row-1, value);
+            }
+            bitCounter = bitCounter << 1;
+        }
+        bitCounter = 0b00000001;
+    }
+}
+
+/**************************************************************************/
+/*!
   @brief    Draws a string.
   @param    x               X coordinate 
   @param    y               Y coordinate 
@@ -476,7 +573,7 @@ void MAX7219CWGMatrix::drawFillTriangle(uint8_t x0, uint8_t y0, uint8_t x1, uint
 /**************************************************************************/
 void MAX7219CWGMatrix::drawString(uint8_t x, uint8_t y, char string[], uint8_t length, uint8_t value) {
     for (int character = 0; character < length; character++) {
-        _drawChar(x+character+(character*_fontCols), y, string[character], value);
+        drawChar(x+character+(character*_fontCols), y, string[character], value);
     }
 }
 
@@ -521,6 +618,46 @@ uint8_t MAX7219CWGMatrix::getHeight() {
 
 /**************************************************************************/
 /*!
+  @brief    Returns the number of columns in the selected font.
+  @returns  _fontCols       Number of columns
+*/
+/**************************************************************************/
+uint8_t MAX7219CWGMatrix::getFontCols() {
+    return _fontCols;
+}
+
+/**************************************************************************/
+/*!
+  @brief    Returns the power state.
+  @returns  _power          True if power is on  
+*/
+/**************************************************************************/
+bool MAX7219CWGMatrix::getPower() {
+    return _power;
+}
+
+/**************************************************************************/
+/*!
+  @brief    Returns the intensity.
+  @returns  _intensity      0 = lowest, 15 = highest
+*/
+/**************************************************************************/
+uint8_t MAX7219CWGMatrix::getIntensity() {
+    return _intensity;
+}
+
+/**************************************************************************/
+/*!
+  @brief    Returns if display is inverted.
+  @returns  _inverted       True if display is inverted.
+*/
+/**************************************************************************/
+bool MAX7219CWGMatrix::getInverted() {
+    return _inverted;
+}
+
+/**************************************************************************/
+/*!
   @brief    Shoots the display buffer in the display. Calculates order
             depending on the wiring type.
 */
@@ -555,15 +692,22 @@ void MAX7219CWGMatrix::display() {
 
                 for (int16_t d = _numSegmentsHorizontal; d != -1; d--) {
                     uint8_t data = _matrix[d][r2];
+                    if (_inverted) {
+                        data = ~data;
+                    }
                     _reverse(data);
                     uint16_t cmd = ((matrixRow + 1) << 8) | data;
                     SPI.transfer16(cmd);
                 }
             } else {
-                matrixRow = 7-rowAddress;
+                matrixRow = ROW_SIZE-1-rowAddress;
 
                 for (int16_t d = 0; d != _numSegmentsHorizontal; d++) {
-                    uint16_t cmd = ((matrixRow + 1) << 8) | _matrix[d][r2];
+                    uint8_t data = _matrix[d][r2];
+                    if (_inverted) {
+                        data = ~data;
+                    }
+                    uint16_t cmd = ((matrixRow + 1) << 8) | data;
                     SPI.transfer16(cmd);
                 }
             }
@@ -637,7 +781,7 @@ void MAX7219CWGMatrix::_fillCircleHelper(uint8_t x0, uint8_t y0, int16_t r, uint
     int16_t px = x;
     int16_t py = y;
     
-    delta++;                                                                // Avoid some +1's in the loop
+    delta++;                                                                //Avoid some +1's in the loop
     
     while (x < y) {
         if (f >= 0) {
@@ -673,63 +817,5 @@ void MAX7219CWGMatrix::_fillCircleHelper(uint8_t x0, uint8_t y0, int16_t r, uint
             py = y;
         }
         px = x;
-    }
-}
-
-/**************************************************************************/
-/*!
-  @brief    Draws a character.
-  @param    x           x coordinate of most left column of leds
-  @param    y           y coordinate of lowest row of leds
-  @param    character   Character to be drawn
-  @param    value       Value to fill (0-1)
-*/
-/**************************************************************************/
-void MAX7219CWGMatrix::_drawChar(uint8_t x, uint8_t y, char character, uint8_t value) {
-    uint8_t i = 0;
-    uint8_t bitCounter = 0b00000001;
-
-    if (_font == FONT_3X5) {
-        while (i < FONT_3X5_SIZE) {
-            if (character == FontToIndex3x5[i]) {
-                break;
-            }
-            i++;
-        }
-    } else if (_font == FONT_4X6) {
-        while (i < FONT_4X6_SIZE) {
-            if (character == FontToIndex4x6[i]) {
-                break;
-            }
-            i++;
-        }
-    } else if (_font == FONT_5X7) {
-        while (i < FONT_5X7_SIZE) {
-            if (character == FontToIndex5x7[i]) {
-                break;
-            }
-            i++;
-        }
-    }
-    
-    uint16_t memAddress = i*_fontCols;
-    uint8_t columnValue = 0;
-        
-    for (uint8_t column = 0; column < _fontCols; column++) {
-        for (uint8_t row = _fontRows; row > 0; row--) {
-            if (_font == FONT_3X5) {
-                columnValue = pgm_read_byte_near(Font3x5 + (memAddress+column));  
-            } else if (_font == FONT_4X6) {
-                columnValue = pgm_read_byte_near(Font4x6 + (memAddress+column));
-            } else if (_font == FONT_5X7) {
-                columnValue = pgm_read_byte_near(Font5x7 + (memAddress+column));
-            }
-
-            if (columnValue & bitCounter) {
-                drawPixel(x+column, y+row-1, value);
-            }
-            bitCounter = bitCounter << 1;
-        }
-        bitCounter = 0b00000001;
     }
 }
