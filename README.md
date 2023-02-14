@@ -13,6 +13,7 @@ These instructions will get you a copy of the project up and running on your loc
 The software is written, compiled and uploaded using the Arduino IDE (v1.8.13). You could use the online Arduino IDE or other software, but I recommend using the version you can download on [this page](https://www.arduino.cc/en/software). In order to use the Arduino IDE as tool for uploading to the ESP, there are several steps to follow. Please visit the following tutorials:
 
 * https://randomnerdtutorials.com/installing-the-esp32-board-in-arduino-ide-windows-instructions/
+* https://randomnerdtutorials.com/install-esp32-filesystem-uploader-arduino-ide/
 
 ### Installing
 
