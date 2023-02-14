@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Control Ledstrip</title>
+        <link rel="stylesheet" media="screen and (min-device-width: 700px)" href="style.css">
+        <link rel="stylesheet" media="screen and (max-device-width: 699px)" href="style_mobile.css">
+        <link rel="stylesheet" href="style_switches.css"/>
+        <link rel="shortcut icon" type="image/x-icon" href="favicon.ico">
+        <meta charset="utf-8" />
+        
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+    </head>
+    <body>
+        <script src="jquery.min.js"></script>
+        <script src="switches.js"></script>
+        
+        <script>
+            var power = %POWER%;
+            var intensity = %INTENSITY%;
+            var screen = %SCREEN%;
+            var inverted = %INVERTED%;
+        </script>
+
+        <div class="page">
+            <h2>Control Display</h2>
+
+            <div class="container-form">
+                <div class="wrap-form">
+                    <form class="form">
+                        <span class="form-title">Turn on or off</span>
+                        <div id="toggles">
+                            <input type="checkbox" name="cb_power" id="cb_power" class="ios-toggle" onclick="setPower()"/>
+                            <label for="cb_power" class="checkbox-label" data-off="off" data-on="on"></label>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            <div class="container-form">
+                <div class="wrap-form">
+                    <form class="form">
+                        <span class="form-title">Intensity</span>
+                        <input class="intensitySlider" style="background: transparent;" type="range" min="0" max="15" value=%INTENSITY% name="intensity" id="intensity"/>
+                    </form>
+                </div>
+            </div>
+
+            <div class="container-form">
+                <div class="wrap-form">
+                    <form class="form">
+                        <span class="form-title">Select screen</span>
+                        <button type="button" id="screen1Btn" style="width: 140px; height: 60px;" class="button">Screen 1</button><br><br>
+                        <button type="button" id="screen2Btn" style="width: 140px; height: 60px;" class="button">Screen 2</button><br><br>
+                        <button type="button" id="screen3Btn" style="width: 140px; height: 60px;" class="button">Screen 3</button>
+                    </form>
+                </div>
+            </div>
+
+            <div class="container-form">
+                <div class="wrap-form">
+                    <span class="form-title">Inverse display</span>
+                    <form class="form">
+                        <div id="toggles">
+                            <input type="checkbox" name="cb_inversed" id="cb_inversed" class="ios-toggle" onclick="setInversed()"/>
+                            <label for="cb_inversed" class="checkbox-label" data-off="off" data-on="on"></label>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <script src="base.js"></script>
+    </body>																<!--End of the body-->
+</html>                                                                 <!--End of the html page-->
