@@ -17,7 +17,7 @@ The software is written, compiled and uploaded using the Arduino IDE (v1.8.13). 
 
 ### Installing
 
-Clone the repository, navigate to the `examples` map and try some examples.
+Clone the repository, navigate to the `examples` folder and try some examples.
 
 ## Internet controls
 
