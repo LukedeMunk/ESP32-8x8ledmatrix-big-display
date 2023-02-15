@@ -16,10 +16,6 @@
 #include "Font4x6.h"
 #include "Font5x7.h"
 
-/* Pins */
-#define CLOCK_OUT_PIN           18                                          //Use hardware SPI GPIO clock pin for your hardware
-#define DATAIN_PIN              3                                           //Use hardware SPI GPIO clock pin for your hardware
-
 #define ROW_SIZE                8
 #define COLUMN_SIZE             8
 

@@ -7,6 +7,9 @@
  */
 #include "MAX7219CWGMatrix.h"
 
+/* Pins */
+#define CLOCK_OUT_PIN   18                                                  //Use hardware SPI GPIO clock pin for your hardware
+#define DATAIN_PIN      23                                                  //Use hardware SPI GPIO data pin for your hardware
 #define CS_PIN          14
 
 #define WIDTH           4                                                   //4 segments horizontal
